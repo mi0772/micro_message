@@ -24,7 +24,7 @@ typedef enum {
 
 typedef void (*on_message_fn)(int socket, struct sockaddr_in *client, socklen_t len_client, const micro_command_e command);
 
-int udp_server_start(unsigned int port, char* name, on_message_fn on_message);
+int tcp_server_start(unsigned int port, char* name, on_message_fn on_message);
 
 void on_admin_message(int socket, struct sockaddr_in *client, socklen_t len_client, const micro_command_e command);
 void on_microservice_message(int socket, struct sockaddr_in *client, socklen_t len_client, const micro_command_e command);

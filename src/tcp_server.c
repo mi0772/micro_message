@@ -8,18 +8,17 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/_endian.h>
 #include <unistd.h>
-#include "udp_server.h"
 #include "string_man.h"
+#include "tcp_server.h"
 
 static void sanitize_buffer(char *buffer);
 
-int udp_server_start(unsigned int port, char *name, on_message_fn on_message) {
+int tcp_server_start(unsigned int port, char *name, on_message_fn on_message) {
     char buffer[1024];
 
-    int server_fd = socket(AF_INET, SOCK_DGRAM, 0);
-    struct sockaddr_in address, client;
+    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in address;
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(port);
@@ -33,13 +32,26 @@ int udp_server_start(unsigned int port, char *name, on_message_fn on_message) {
         return -1;
     }
 
-    printf("%s server is running and listening on port %d (UDP)...\n", name, port);
+    if (listen(server_fd, SOMAXCONN) < 0) {
+        perror("listen failed");
+        return -1;
+    }
+
+    printf("%s server is running and listening on port %d (TCP)...\n", name, port);
 
     while (1) {
+        struct sockaddr_in client;
         socklen_t len = sizeof(client);
-        ssize_t n = recvfrom(server_fd, buffer, sizeof(buffer) - 1, 0, (struct sockaddr *) &client, &len);
+        int client_fd = accept(server_fd, (struct sockaddr *)&client, &len);
+        if (client_fd < 0) {
+            perror("accept failed");
+            continue;
+        }
+
+        ssize_t n = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
         if (n < 0) {
-            perror("recvfrom failed");
+            perror("recv failed");
+            close(client_fd);
             continue;
         }
         buffer[n] = '\0'; // null-terminate
@@ -47,10 +59,12 @@ int udp_server_start(unsigned int port, char *name, on_message_fn on_message) {
 
         micro_command_e command = parse_command(buffer);
         if (command != INVALID_COMMAND) {
-            on_message(server_fd, &client, len, command);
+            on_message(client_fd, &client, len, command);
         } else {
             printf("Invalid command received: %s\n", buffer);
         }
+
+        close(client_fd);
     }
 }
 
@@ -69,7 +83,7 @@ micro_command_e parse_command(const char *message) {
 void on_admin_message(int socket, struct sockaddr_in *client, socklen_t len_client, const micro_command_e command) {
     printf("Admin message received: %d\n", command);
     char *r = "ACK";
-    sendto(socket, r, strlen(r), 0, (struct sockaddr *) client, len_client);
+    send(socket, r, strlen(r), 0);
     // Here you can handle the admin message as needed
 }
 
@@ -77,7 +91,7 @@ void on_microservice_message(int socket, struct sockaddr_in *client, socklen_t l
     printf("Microservice message received: %d\n", command);
     // Here you can handle the microservice message as needed
     char *r = "ACK";
-    sendto(socket, r, strlen(r), 0, (struct sockaddr *) client, len_client);
+    send(socket, r, strlen(r), 0);
 }
 
 static void sanitize_buffer(char *buffer) {
