@@ -1,0 +1,16 @@
+/**
+ * Project: micro_message
+ * Author: Carlo Di Giuseppe
+ * Date: 20/06/25
+ * License: MIT
+ */
+ 
+#ifndef VERSION_H
+#define VERSION_H
+
+#define APP_NAME        "micro-message"
+#define APP_VERSION     "@APP_VERSION@"
+#define APP_BUILD       "@APP_BUILD@"
+#define APP_RELEASE_DATE "@APP_RELEASE_DATE@"
+
+#endif //VERSION_H
