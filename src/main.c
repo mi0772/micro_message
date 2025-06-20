@@ -1,19 +1,19 @@
 #include <pthread.h>
 #include <stdio.h>
+#include "udp_server.h"
 #include "version.h"
-#include "tcp_server.h"
 
 static void startup_banner(void);
 
 void* admin_server_start_f(void* arg) {
     int port = *(int *)arg;
-    tpc_server_start(port, "admin", on_admin_message);
+    udp_server_start(port, "admin", on_admin_message);
     return NULL;
 }
 
 void *message_server_start_f(void *arg) {
     int port = *(int *)arg;
-    tpc_server_start(port, "message", on_microservice_message);
+    udp_server_start(port, "message", on_microservice_message);
     return NULL;
 }
 

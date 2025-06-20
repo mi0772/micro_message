@@ -32,4 +32,4 @@ include_directories(
 )
 
 # Eseguito finale
-add_executable(micro_message src/main.c src/tpc_server.c)
+add_executable(micro_message src/main.c src/udp_server.c src/string_man.c)
